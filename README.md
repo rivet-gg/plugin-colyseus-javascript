@@ -1,4 +1,4 @@
-# Colyseus Rivet Plugin
+# Colyseus Rivet-Enabled Client
 
 <div align="center">
   <a href="https://github.com/colyseus/colyseus">
