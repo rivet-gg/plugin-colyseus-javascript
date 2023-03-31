@@ -14,7 +14,8 @@
 		"build-all": "tsc && npm run build && npm run build-dist-dts",
 		"watch": "tsc -w",
 		"tslint": "tslint --project .",
-		"prepublishOnly": "tsc && npm run build"
+		"prepublishOnly": "tsc && npm run build",
+		"serve-test": "http-server dist/"
 	},
 	"files": [
 		"dist",
@@ -74,6 +75,7 @@
 		"benchmark": "^2.1.4",
 		"chai": "^3.5.0",
 		"dts-bundle-generator": "^5.7.0",
+		"http-server": "^14.1.1",
 		"install": "^0.12.2",
 		"mocha": "^5.1.1",
 		"nanoid": "^2.0.1",

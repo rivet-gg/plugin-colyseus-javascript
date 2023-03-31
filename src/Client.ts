@@ -26,7 +26,7 @@ export class Client {
         let res: Rivet.matchmaker.FindLobbyResponse;
         try {
             res = await this.rivet.matchmaker.lobbies.find({
-                gameModes: [roomName],
+                gameModes: ["default"],
             });
         } catch (err) {
             throw new MatchMakeError(err, err.statusCode);
@@ -42,7 +42,7 @@ export class Client {
         let res: Rivet.matchmaker.FindLobbyResponse;
         try {
             res = await this.rivet.matchmaker.lobbies.find({
-                gameModes: [roomName],
+                gameModes: ["default"],
                 preventAutoCreateLobby: true,
             });
         } catch (err) {

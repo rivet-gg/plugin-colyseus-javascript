@@ -29,8 +29,10 @@
     <button onclick="reconnect()">Re-join last closed connection</button>
 
     <script>
-      var host = (window.document.location.host || "localhost").replace(/:.*/, '');
-      var client = new Colyseus.Client('ws://' + host + ':2567');
+      if (!localStorage.rivetToken) {
+        localStorage.rivetToken = prompt('Rivet token:');
+      }
+      var client = new Colyseus.Client({ rivetToken: localStorage.rivetToken });
       var room;
 
       function addListeners (room) {
