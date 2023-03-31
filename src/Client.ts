@@ -1,9 +1,8 @@
 import { post, get } from "httpie";
-
 import { ServerError } from './errors/ServerError';
 import { Room, RoomAvailable } from './Room';
-import { Auth } from './Auth';
 import { SchemaConstructor } from './serializer/SchemaSerializer';
+import { RivetClient, Rivet } from "@rivet-gg/api";
 
 export type JoinOptions = any;
 
@@ -16,56 +15,85 @@ export class MatchMakeError extends Error {
     }
 }
 
-// - React Native does not provide `window.location`
-// - Cocos Creator (Native) does not provide `window.location.hostname`
-const DEFAULT_ENDPOINT = (typeof (window) !== "undefined" &&  typeof (window?.location?.hostname) !== "undefined")
-    ? `${window.location.protocol.replace("http", "ws")}//${window.location.hostname}${(window.location.port && `:${window.location.port}`)}`
-    : "ws://127.0.0.1:2567";
-
 export class Client {
-    protected endpoint: string;
-    protected _auth: Auth;
+    protected rivet: RivetClient;
 
-    constructor(endpoint: string = DEFAULT_ENDPOINT) {
-        this.endpoint = endpoint;
-    }
-
-    public get auth(): Auth {
-        if (!this._auth) { this._auth = new Auth(this.endpoint); }
-        return this._auth;
+    constructor({ rivetToken }: { rivetToken?: string }) {
+        this.rivet = new RivetClient({ token: rivetToken });
     }
 
     public async joinOrCreate<T>(roomName: string, options: JoinOptions = {}, rootSchema?: SchemaConstructor<T>) {
-        return await this.createMatchMakeRequest<T>('joinOrCreate', roomName, options, rootSchema);
+        let res: Rivet.matchmaker.FindLobbyResponse;
+        try {
+            res = await this.rivet.matchmaker.lobbies.find({
+                gameModes: [roomName],
+            });
+        } catch (err) {
+            throw new MatchMakeError(err, err.statusCode);
+        }
+        return await this.createMatchMakeRequest<T>('joinOrCreate', roomName, options, rootSchema, res.lobby, res.player);
     }
 
     public async create<T>(roomName: string, options: JoinOptions = {}, rootSchema?: SchemaConstructor<T>) {
-        return await this.createMatchMakeRequest<T>('create', roomName, options, rootSchema);
+        throw "Creating a lobby is not supported yet. Use joinOrCreate instead."
     }
 
     public async join<T>(roomName: string, options: JoinOptions = {}, rootSchema?: SchemaConstructor<T>) {
-        return await this.createMatchMakeRequest<T>('join', roomName, options, rootSchema);
+        let res: Rivet.matchmaker.FindLobbyResponse;
+        try {
+            res = await this.rivet.matchmaker.lobbies.find({
+                gameModes: [roomName],
+                preventAutoCreateLobby: true,
+            });
+        } catch (err) {
+            throw new MatchMakeError(err, err.statusCode);
+        }
+        return await this.createMatchMakeRequest<T>('joinOrCreate', roomName, options, rootSchema, res.lobby, res.player);
     }
 
     public async joinById<T>(roomId: string, options: JoinOptions = {}, rootSchema?: SchemaConstructor<T>) {
-        return await this.createMatchMakeRequest<T>('joinById', roomId, options, rootSchema);
+        throw "Joining lobbies is not supported yet. Use joinOrCreate instead.";
+
+        // let res: Rivet.matchmaker.JoinLobbyResponse;
+        // try {
+        //     res = await this.rivet.matchmaker.lobbies.join({ lobbyId: roomId });
+        // } catch (err) {
+        //     throw new MatchMakeError(err, err.statusCode);
+        // }
+        // return await this.createMatchMakeRequest<T>('joinOrCreate', roomName, options, rootSchema, res.lobby, res.player);
     }
 
     public async reconnect<T>(roomId: string, sessionId: string, rootSchema?: SchemaConstructor<T>) {
-        return await this.createMatchMakeRequest<T>('joinById', roomId, { sessionId }, rootSchema);
+        throw "Reconnecting to lobbies is not supported."
     }
 
     public async getAvailableRooms<Metadata= any>(roomName: string = ""): Promise<RoomAvailable<Metadata>[]> {
-        const url = `${this.endpoint.replace("ws", "http")}/matchmake/${roomName}`;
-        return (await get(url, { headers: { 'Accept': 'application/json' } })).data;
+        // TODO: This is not the real room list
+
+        let res = await this.rivet.matchmaker.lobbies.list();
+        let rooms = res.lobbies.map(lobby => {
+            return {
+                // TODO: Room ID != lobby ID (for now)
+                roomId: lobby.lobbyId,
+                clients: lobby.totalPlayerCount,
+                maxClients: lobby.maxPlayersNormal,
+                metadata: { rivetLobby: lobby } as any,
+            };
+        });
+
+        return rooms;
     }
 
-    public async consumeSeatReservation<T>(response: any, rootSchema?: SchemaConstructor<T>): Promise<Room<T>> {
+    public async consumeSeatReservation<T>(
+        origin: string,
+        response: any,
+        rootSchema?: SchemaConstructor<T>
+    ): Promise<Room<T>> {
         const room = this.createRoom<T>(response.room.name, rootSchema);
         room.roomId = response.room.roomId;
         room.sessionId = response.sessionId;
 
-        room.connect(this.buildEndpoint(response.room, { sessionId: room.sessionId }));
+        room.connect(this.buildEndpoint(origin, response.room, { sessionId: room.sessionId }));
 
         return new Promise((resolve, reject) => {
             const onError = (code, message) => reject(new ServerError(code, message));
@@ -82,14 +110,13 @@ export class Client {
         method: string,
         roomName: string,
         options: JoinOptions = {},
-        rootSchema?: SchemaConstructor<T>
+        rootSchema: SchemaConstructor<T>,
+        lobby: Rivet.matchmaker.JoinLobby,
+        player: Rivet.matchmaker.JoinPlayer,
     ) {
-        const url = `${this.endpoint.replace("ws", "http")}/matchmake/${method}/${roomName}`;
-
-        // automatically forward auth token, if present
-        if (this._auth && this._auth.hasToken) {
-            options.token = this._auth.token;
-        }
+        const proto = lobby.ports["default"].isTls ? "wss" : "ws";
+        const origin =`${proto}://${lobby.ports["default"].host}`;
+        const url = `${origin}/matchmake/${method}/${roomName}`;
 
         const response = (
             await post(url, {
@@ -105,14 +132,14 @@ export class Client {
             throw new MatchMakeError(response.error, response.code);
         }
 
-        return this.consumeSeatReservation<T>(response, rootSchema);
+        return this.consumeSeatReservation<T>(origin, response, rootSchema);
     }
 
     protected createRoom<T>(roomName: string, rootSchema?: SchemaConstructor<T>) {
         return new Room<T>(roomName, rootSchema);
     }
 
-    protected buildEndpoint(room: any, options: any = {}) {
+    protected buildEndpoint(origin: string, room: any, options: any = {}) {
         const params = [];
 
         for (const name in options) {
@@ -122,7 +149,7 @@ export class Client {
             params.push(`${name}=${options[name]}`);
         }
 
-        return `${this.endpoint}/${room.processId}/${room.roomId}?${params.join('&')}`;
+        return `${origin}/${room.processId}/${room.roomId}?${params.join('&')}`;
     }
 
 }

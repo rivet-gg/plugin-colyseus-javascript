@@ -1,3 +1,5 @@
+build/
+dist/colyseus.js*
 dist/lib
 out.log
 /node_modules

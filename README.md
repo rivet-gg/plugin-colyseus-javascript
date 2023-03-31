@@ -1,3 +1,5 @@
+# Colyseus Rivet Plugin
+
 <div align="center">
   <a href="https://github.com/colyseus/colyseus">
     <img src="https://github.com/colyseus/colyseus/blob/master/media/header.png?raw=true" />
@@ -18,10 +20,49 @@
   <h3>
 </div>
 
-**Browser support tested with:**
+
+## Server Plugin
+
+First install the [Colyseus Rivet plugin](https://github.com/rivet-gg/plugin-colyseus-server/tree/main) for your Colyseus server. (It's compatible with the old Colyseus Arena API.)
+
+## Example Code
+
+Examples of using the Colyseus JavaScript plugin with Rivet are available [here](https://github.com/rivet-gg/plugin-colyseus-examples).
+
+## WIP Notice
+
+This library is an MVP to run a scalable Colyseus game on top of Rivet.
+
+
+**Room IDs**
+
+We intend to integrate deeper room integration to better replicate the Arena-style room placement.
+
+**Creating Lobbies**
+
+Rivet does not allow you to create a lobby at the moment. You must use `joinOrCreate` or `joinById`.
+
+**Room options on matchmaker**
+
+The matchmaker only uses the room name and room ID to filter lobbies. Room options cannot be used to filter lobbies at the moment.
+
+**Lobby reconnection**
+
+Lobby reconnection is not supported yet.
+
+## Removed auth support
+
+Support for Colyseus social was [deprecated](https://docs.colyseus.io/colyseus/tools/colyseus-social/), so we removed it in this library. If you are looking for an alternative, check out [Rivet Identities](https://docs.rivet.gg/identity/introduction).
+
+## Fork Versioning
+
+This library will match the minor version (i.e. `MAJOR.MINOR.PATCH`) of the master branch.
+
+## Browser Support
 
 <a href="https://www.browserstack.com/"><img src="media/browserstack-logo.png?raw=true" width="300" /></a>
 
 ## License
 
 MIT
+
