@@ -85,7 +85,8 @@ export class Client {
     }
 
     public async consumeSeatReservation<T>(
-        origin: string,
+        port: Rivet.matchmaker.JoinPort,
+        player: Rivet.matchmaker.JoinPlayer,
         response: any,
         rootSchema?: SchemaConstructor<T>
     ): Promise<Room<T>> {
@@ -93,7 +94,10 @@ export class Client {
         room.roomId = response.room.roomId;
         room.sessionId = response.sessionId;
 
-        room.connect(this.buildEndpoint(origin, response.room, { sessionId: room.sessionId }));
+        room.connect(this.buildEndpoint(port, response.room, {
+            sessionId: room.sessionId,
+            playerToken: player.token
+        }));
 
         return new Promise((resolve, reject) => {
             const onError = (code, message) => reject(new ServerError(code, message));
@@ -114,9 +118,12 @@ export class Client {
         lobby: Rivet.matchmaker.JoinLobby,
         player: Rivet.matchmaker.JoinPlayer,
     ) {
-        const proto = lobby.ports["default"].isTls ? "wss" : "ws";
-        const origin =`${proto}://${lobby.ports["default"].host}`;
+        const port = lobby.ports["default"];
+        const proto = port.isTls ? "https" : "http";
+        const origin =`${proto}://${port.host}`;
         const url = `${origin}/matchmake/${method}/${roomName}`;
+
+        console.log('matchmaking', url);
 
         const response = (
             await post(url, {
@@ -132,14 +139,14 @@ export class Client {
             throw new MatchMakeError(response.error, response.code);
         }
 
-        return this.consumeSeatReservation<T>(origin, response, rootSchema);
+        return this.consumeSeatReservation<T>(port, player, response, rootSchema);
     }
 
     protected createRoom<T>(roomName: string, rootSchema?: SchemaConstructor<T>) {
         return new Room<T>(roomName, rootSchema);
     }
 
-    protected buildEndpoint(origin: string, room: any, options: any = {}) {
+    protected buildEndpoint(port: Rivet.matchmaker.JoinPort, room: any, options: any = {}) {
         const params = [];
 
         for (const name in options) {
@@ -149,7 +156,8 @@ export class Client {
             params.push(`${name}=${options[name]}`);
         }
 
-        return `${origin}/${room.processId}/${room.roomId}?${params.join('&')}`;
+        const proto = port.isTls ? "wss" : "ws";
+        return `${proto}://${port.host}/${room.processId}/${room.roomId}?${params.join('&')}`;
     }
 
 }
