@@ -64,15 +64,13 @@ The test server is used for manual testing for development. For more comprehensi
 
 **Project setup**
 
-1. Create a game on the [Rivet Developer Dashboard](https://hub.rivet.gg/developer/dashboard)
-1. Install the [Rivet CLI](https://github.com/rivet-gg/cli)
-1. Run `rivet init --recommend` to link your game
+**Running**
 
-**Running example server**
-
+1. Run the test server [here](https://github.com/rivet-gg/plugin-colyseus-server)
 1. Build the client: `yarn run build`
 1. Serve the client: `yarn run serve-test`
-1. Run the test server [here](https://github.com/rivet-gg/plugin-colyseus-server)
+1. Visit http://localhost:8080
+1. When prompted for a token, paste the token logged by the test server
 
 ## Browser Support
 
