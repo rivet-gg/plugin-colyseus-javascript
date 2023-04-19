@@ -58,6 +58,22 @@ Support for Colyseus social was [deprecated](https://docs.colyseus.io/colyseus/t
 
 This library will match the minor version (i.e. `MAJOR.MINOR.PATCH`) of the master branch.
 
+## Running Example Client
+
+The example server is used for manual testing for development. For more comprehensive examples, check out the [Colyseus examples repo](https://github.com/rivet-gg/plugin-colyseus-examples).
+
+Project setup:
+
+1. Create a game on the [Rivet Developer Dashboard](https://hub.rivet.gg/developer/dashboard)
+1. Install the [Rivet CLI](https://github.com/rivet-gg/cli)
+1. Run `rivet init --recommend` to link your game
+
+Running example server:
+
+1. Build the client: `yarn run build`
+1. Serve the client: `yarn run serve-test`
+1. Run the client example server [here](https://github.com/rivet-gg/plugin-colyseus-server)
+
 ## Browser Support
 
 <a href="https://www.browserstack.com/"><img src="media/browserstack-logo.png?raw=true" width="300" /></a>
