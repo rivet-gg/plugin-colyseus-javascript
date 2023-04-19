@@ -1,6 +1,6 @@
 {
 	"name": "@rivet-gg/plugin-colyseus-javascript",
-	"version": "0.14.1",
+	"version": "0.14.3",
 	"description": "JavaScript plugin for Rivet + Colyseus",
 	"authors": [
 		"Endel Dreyer",
@@ -14,7 +14,7 @@
 		"build-all": "tsc && npm run build && npm run build-dist-dts",
 		"watch": "tsc -w",
 		"tslint": "tslint --project .",
-		"prepublishOnly": "tsc && npm run build",
+		"prepublishOnly": "tsc &>/dev/null; npm run build",
 		"serve-test": "http-server dist/"
 	},
 	"files": [
@@ -88,5 +88,8 @@
 		"tslint": "^5.9.1",
 		"typescript": "^5.0.3",
 		"ws": "^7.4.3"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }
