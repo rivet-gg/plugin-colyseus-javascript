@@ -35,7 +35,17 @@ export class Client {
     }
 
     public async create<T>(roomName: string, options: JoinOptions = {}, rootSchema?: SchemaConstructor<T>) {
-        throw "Creating a lobby is not supported yet. Use joinOrCreate instead."
+        // TODO: throw "Creating a lobby is not supported yet. Use joinOrCreate instead."
+
+        let res: Rivet.matchmaker.FindLobbyResponse;
+        try {
+            res = await this.rivet.matchmaker.lobbies.find({
+                gameModes: ["default"],
+            });
+        } catch (err) {
+            throw new MatchMakeError(err, err.statusCode);
+        }
+        return await this.createMatchMakeRequest<T>('create', roomName, options, rootSchema, res.lobby, res.player);
     }
 
     public async join<T>(roomName: string, options: JoinOptions = {}, rootSchema?: SchemaConstructor<T>) {
@@ -43,45 +53,59 @@ export class Client {
         try {
             res = await this.rivet.matchmaker.lobbies.find({
                 gameModes: ["default"],
-                preventAutoCreateLobby: true,
+                // preventAutoCreateLobby: true,
             });
         } catch (err) {
             throw new MatchMakeError(err, err.statusCode);
         }
-        return await this.createMatchMakeRequest<T>('joinOrCreate', roomName, options, rootSchema, res.lobby, res.player);
+        return await this.createMatchMakeRequest<T>('join', roomName, options, rootSchema, res.lobby, res.player);
     }
 
     public async joinById<T>(roomId: string, options: JoinOptions = {}, rootSchema?: SchemaConstructor<T>) {
-        throw "Joining lobbies is not supported yet. Use joinOrCreate instead.";
+        // TODO: throw "Joining lobbies is not supported yet. Use joinOrCreate instead.";
 
-        // let res: Rivet.matchmaker.JoinLobbyResponse;
-        // try {
-        //     res = await this.rivet.matchmaker.lobbies.join({ lobbyId: roomId });
-        // } catch (err) {
-        //     throw new MatchMakeError(err, err.statusCode);
-        // }
-        // return await this.createMatchMakeRequest<T>('joinOrCreate', roomName, options, rootSchema, res.lobby, res.player);
+        let res: Rivet.matchmaker.JoinLobbyResponse;
+        try {
+            res = await this.rivet.matchmaker.lobbies.find({
+                gameModes: ["default"],
+            });
+        } catch (err) {
+            throw new MatchMakeError(err, err.statusCode);
+        }
+        return await this.createMatchMakeRequest<T>('joinById', roomId, options, rootSchema, res.lobby, res.player);
     }
 
     public async reconnect<T>(roomId: string, sessionId: string, rootSchema?: SchemaConstructor<T>) {
-        throw "Reconnecting to lobbies is not supported."
+        // TODO: throw "Reconnecting to lobbies is not supported."
+
+        let res: Rivet.matchmaker.JoinLobbyResponse;
+        try {
+            res = await this.rivet.matchmaker.lobbies.find({
+                gameModes: ["default"],
+            });
+        } catch (err) {
+            throw new MatchMakeError(err, err.statusCode);
+        }
+        return await this.createMatchMakeRequest<T>('joinById', roomId, { sessionId }, rootSchema, res.lobby, res.player);
     }
 
     public async getAvailableRooms<Metadata= any>(roomName: string = ""): Promise<RoomAvailable<Metadata>[]> {
+        throw "Unimplemented";
+
         // TODO: This is not the real room list
 
-        let res = await this.rivet.matchmaker.lobbies.list();
-        let rooms = res.lobbies.map(lobby => {
-            return {
-                // TODO: Room ID != lobby ID (for now)
-                roomId: lobby.lobbyId,
-                clients: lobby.totalPlayerCount,
-                maxClients: lobby.maxPlayersNormal,
-                metadata: { rivetLobby: lobby } as any,
-            };
-        });
+        // let res = await this.rivet.matchmaker.lobbies.list();
+        // let rooms = res.lobbies.map(lobby => {
+        //     return {
+        //         // TODO: Room ID != lobby ID (for now)
+        //         roomId: lobby.lobbyId,
+        //         clients: lobby.totalPlayerCount,
+        //         maxClients: lobby.maxPlayersNormal,
+        //         metadata: { rivetLobby: lobby } as any,
+        //     };
+        // });
 
-        return rooms;
+        // return rooms;
     }
 
     public async consumeSeatReservation<T>(
@@ -122,8 +146,6 @@ export class Client {
         const proto = port.isTls ? "https" : "http";
         const origin =`${proto}://${port.host}`;
         const url = `${origin}/matchmake/${method}/${roomName}`;
-
-        console.log('matchmaking', url);
 
         const response = (
             await post(url, {
