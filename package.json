@@ -64,7 +64,7 @@
 		"tslib": "^2.1.0"
 	},
 	"devDependencies": {
-		"@rivet-gg/api": "^0.0.1-rc17",
+		"@rivet-gg/api": "^23.2.0-rc1",
 		"@rollup/plugin-alias": "^3.1.2",
 		"@rollup/plugin-commonjs": "^17.1.0",
 		"@rollup/plugin-node-resolve": "^11.2.0",
